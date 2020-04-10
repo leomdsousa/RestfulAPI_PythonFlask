@@ -27,7 +27,7 @@ hoteis = [
 
 class Hoteis(Resource):
     def get(self):
-        return {'hoteis': hoteis}
+        return { 'hoteis': [hotel.convertToDictionary() for hotel in HotelModel.findAll_hotel() ] }
 
 class Hotel(Resource):
 
@@ -45,40 +45,39 @@ class Hotel(Resource):
     argumento.add_argument('cidade')
 
     def get(self, id):
-        hotel = Hotel.find_hotel(id)
-
+        hotel = HotelModel.find_hotelById(id)
+        
         if hotel:
-            return hotel
+            return hotel.convertToDictionary()
         return {'Erro': 'Hotel não encontrado'}, 404
 
     def post(self, id):
+        hotel = HotelModel.find_hotelById(id)
+        if hotel:
+            return {'Erro': 'Hotel já existente'}, 400
+
         dados = Hotel.argumento.parse_args()
-        hotel_modelo = HotelModel(id, **dados)
-        novo_hotel = hotel_modelo.convertToDictionary()
-        hoteis.append(novo_hotel)
-        return novo_hotel, 201
+        hotel = HotelModel(id, **dados)
+        hotel.save_hotel()
+        return hotel.convertToDictionary(), 201
 
     def put(self, id):
-        dados = Hotel.argumento.parse_args()
-        hotel_modelo = HotelModel(id, **dados)
-        hotel_atualizado = hotel_modelo.convertToDictionary()
-        hotel = Hotel.find_hotel(id)
+        hotel = HotelModel.find_hotelById(id)
+
         if hotel:
-            hotel.update(hotel_atualizado)
-            return hotel, 200
-        return {'Erro': 'Erro'}, 404  
-        return hoteis, 200
+            dados = Hotel.argumento.parse_args()
+            hotel_model = HotelModel(id, **dados)
+            hotel_model.update_hotel()
+            return hotel_model.convertToDictionary(), 200
+
+        return {'Erro': 'Hotel não encontrado'}, 404
 
     def delete(self, id):
-        hotel = Hotel.find_hotel(id)
+        hotel = HotelModel.find_hotelById(id)
         
         if hotel:
-            indice = 0
-            for hotel in hoteis:
-                if hotel['id'] == id:
-                    hoteis.pop(indice)
-                    return hoteis, 200    
-                indice += 1
+            hotel.delete_hotel()
+            return { 'hoteis': [hotel.convertToDictionary() for hotel in HotelModel.findAll_hotel() ] }
 
         return {'Erro': 'Hotel não encontrado'}, 404        
 
