@@ -1,83 +1,69 @@
 from flask_restful import Resource, reqparse
-from models.HotelModel import HotelModel
-
-hoteis = [
-    {
-    'id': '1',
-    'nome': 'Alpha Hotel',
-    'nota': 3,
-    'diaria': 250.00,
-    'cidade': 'Santa Catarina',
-    },
-    {
-    'id': '2',
-    'nome': 'Beta Hotel',
-    'nota': 2,
-    'diaria': 80.00,
-    'cidade': 'Santa Catarina',
-    },
-    {
-    'id': '3',
-    'nome': 'Zeta Hotel',
-    'nota': 4,
-    'diaria': 350.00,
-    'cidade': 'Santa Catarina',
-    }
-]
+from models.hotel import HotelModel
+from flask_jwt_extended import jwt_required
 
 class Hoteis(Resource):
     def get(self):
-        return { 'hoteis': [hotel.convertToDictionary() for hotel in HotelModel.findAll_hotel() ] }
+        return { 'hoteis': [hotel.convertToDictionary() for hotel in HotelModel.find_all() ] }
 
 class Hotel(Resource):
 
-    @staticmethod
-    def find_hotel(id):
-        for hotel in hoteis:
-            if hotel['id'] == id:
-                return hotel
-        return None
-
     argumento = reqparse.RequestParser()
-    argumento.add_argument('nome')
-    argumento.add_argument('nota')
+    argumento.add_argument('nome', type=str, required=True, help='The field nome must be filled')
+    argumento.add_argument('nota', type=float, required=True, help='The field nota must be filled')
     argumento.add_argument('diaria')
     argumento.add_argument('cidade')
 
     def get(self, id):
-        hotel = HotelModel.find_hotelById(id)
+        hotel = HotelModel.find_by_id(id)
         
         if hotel:
             return hotel.convertToDictionary()
-        return {'Erro': 'Hotel não encontrado'}, 404
+        return {'Message': 'Hotel not found'}, 404
 
+    @jwt_required
     def post(self, id):
-        hotel = HotelModel.find_hotelById(id)
+        hotel = HotelModel.find_by_id(id)
         if hotel:
-            return {'Erro': 'Hotel já existente'}, 400
+            return {'Message': 'Hotel already exists'}, 400
 
         dados = Hotel.argumento.parse_args()
         hotel = HotelModel(id, **dados)
-        hotel.save_hotel()
-        return hotel.convertToDictionary(), 201
-
+        
+        try:
+            hotel.save_hotel()
+            return hotel.convertToDictionary(), 201
+        except:
+            return {'Message': 'An internal error ocurred while attempting to save the data'}, 500
+        
+    @jwt_required
     def put(self, id):
-        hotel = HotelModel.find_hotelById(id)
+        dados = Hotel.argumento.parse_args()
+        
+        hotel_encontrado = HotelModel.find_by_id(id)
 
-        if hotel:
-            dados = Hotel.argumento.parse_args()
-            hotel_model = HotelModel(id, **dados)
-            hotel_model.update_hotel()
-            return hotel_model.convertToDictionary(), 200
+        if hotel_encontrado:
+            hotel_encontrado.update_hotel(**dados)
+            
+            try:
+                hotel_encontrado.save_hotel()
+            except:
+                return {'Message': 'An internal error ocurred while attempting to save the data'}, 500
 
-        return {'Erro': 'Hotel não encontrado'}, 404
+            return hotel_encontrado.convertToDictionary(), 200
 
+        return {'Message': 'Hotel not found'}, 404
+
+    @jwt_required
     def delete(self, id):
-        hotel = HotelModel.find_hotelById(id)
+        hotel = HotelModel.find_by_id(id)
         
         if hotel:
-            hotel.delete_hotel()
-            return { 'hoteis': [hotel.convertToDictionary() for hotel in HotelModel.findAll_hotel() ] }
+            try:
+                hotel.save_hotel()
+                return { 'hoteis': [hotel.convertToDictionary() for hotel in HotelModel.find_all() ] }
+            except:
+                return {'Message': 'An internal error ocurred while attempting to save the data'}, 500                
 
-        return {'Erro': 'Hotel não encontrado'}, 404        
+        return {'Message': 'Hotel not found'}, 404        
 

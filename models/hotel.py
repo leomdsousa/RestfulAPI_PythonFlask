@@ -1,7 +1,7 @@
 from sql_alchemy import banco 
 
 class HotelModel(banco.Model):
-    __tablaname__ = 'TB_HOTEL'
+    __tablename__ = 'TB_HOTEL'
 
     id = banco.Column(banco.String, primary_key=True)
     nome = banco.Column(banco.String(80))
@@ -26,14 +26,14 @@ class HotelModel(banco.Model):
         }
 
     @classmethod
-    def findAll_hotel(cls):
+    def find_all(cls):
         hoteis = cls.query.all()
         if hoteis:
             return hoteis
         return None
 
     @classmethod
-    def find_hotelById(cls, id):
+    def find_by_id(cls, id):
         hotel = cls.query.filter_by(id=id).first()
         if hotel:
             return hotel
@@ -47,6 +47,8 @@ class HotelModel(banco.Model):
         banco.session.delete(self)
         banco.session.commit()
 
-    def update_hotel(self):
-        banco.session.update(self)
-        banco.session.commit()
+    def update_hotel(self, nome, nota, diaria, cidade):
+        self.nome = nome
+        self.nota = nota
+        self.diaria = diaria
+        self.cidade = cidade
