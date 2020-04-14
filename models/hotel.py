@@ -8,13 +8,15 @@ class HotelModel(banco.Model):
     nota = banco.Column(banco.Float(precision=1))
     diaria = banco.Column(banco.Float(precision=2))
     cidade = banco.Column(banco.String(40))
+    site_id = banco.Column(banco.Integer, banco.ForeignKey('TB_HOTEIS.id'))
 
-    def __init__(self, id, nome, nota, diaria, cidade):
+    def __init__(self, id, nome, nota, diaria, cidade, site_id):
         self.id = id
         self.nome = nome
         self.nota = nota
         self.diaria = diaria
         self.cidade = cidade
+        self.site_id = site_id 
 
     def convertToDictionary(self):
         return {

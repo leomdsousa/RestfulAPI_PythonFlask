@@ -1,20 +1,24 @@
 from flask import Flask, jsonify
 from flask_restful import Api
 from Resources.hotel import Hoteis, Hotel
+from Resources.site import Sites, Site
 from Resources.usuario import Usuario, UsuarioRegister, UsuarioLogin, UsuarioLogout
 from flask_jwt_extended import JWTManager
-from BLACKLIST import BLACKLIST
+from blacklist import BLACKLIST
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banco.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_BLACKLIST_ENABLE'] = True
 app.config['JWT_SECRET_KEY'] = 'IDontKnow'
+#app.config['PROPAGATE_EXCEPTIONS'] = True
 api = Api(app)
 jwt = JWTManager(app)
 
 api.add_resource(Hoteis, '/hoteis')
 api.add_resource(Hotel, '/hoteis/<string:id>')
+api.add_resource(Sites, '/sites')
+api.add_resource(Site, '/site/<string:url>')
 api.add_resource(Usuario, '/usuarios/<int:id>')
 api.add_resource(UsuarioRegister, '/register')
 api.add_resource(UsuarioLogin, '/login')

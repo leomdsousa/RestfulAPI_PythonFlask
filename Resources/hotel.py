@@ -1,36 +1,11 @@
-from flask_restful import Resource, reqparse
 from models.hotel import HotelModel
-from flask_jwt_extended import jwt_required
+from models.site import SiteModel
+from flask_restful import Resource, reqparse
+from flask_jwt_extended import (create_access_token
+                                , jwt_required
+                                , get_raw_jwt)
+from Resources.filters import consulta_hotel_com_cidade, consulta_hotel_sem_cidade, normalizePathParams 
 import sqlite3
-
-
-def normalizePathParams(cidade=None
-                        , nota_min=0
-                        , nota_max=5
-                        , diaria_min=0
-                        , diaria_max=10000
-                        , limit=50
-                        , offset = 0
-                        , **dados):
-    if cidade:
-        return {
-            "cidade": cidade
-            , "nota_min": nota_min
-            , "nota_max": nota_max
-            , "diaria_min": diaria_min
-            , "diaria_max": diaria_max
-            , "limit": limit
-            , "offset": offset
-        }
-    return {
-        "nota_min": nota_min
-        , "nota_max": nota_max
-        , "diaria_min": diaria_min
-        , "diaria_max": diaria_max
-        , "limit": limit
-        , "offset": offset
-    }
-
 
 path_params = reqparse.RequestParser()
 path_params.add_argument('cidade', type=str)
@@ -52,22 +27,11 @@ class Hoteis(Resource):
         parameters = normalizePathParams(**params_valids)
 
         if parameters.get('cidade'):
-            consulta = "SELECT * FROM TB_HOTEIS \
-                        WHERE CIDADE = ? \
-                        AND NOTA >= ? AND NOTA <= ? \
-                        AND DIARIA >= ? AND DIARIA <= ? \
-                        AND LIMIT > ? \
-                        AND OFFSET < ?"
             tupla = tuple({parameters[chave] for chave in parameters})
-            result = cursor.execute(consulta, tupla)
+            result = cursor.execute(consulta_hotel_com_cidade, tupla)
         else:
-            consulta = "SELECT * FROM TB_HOTEIS \
-                        WHERE AND NOTA >= ? AND NOTA <= ? \
-                        AND DIARIA >= ? AND DIARIA <= ? \
-                        AND LIMIT > ? \
-                        AND OFFSET < ?"
             tupla = tuple({parameters[chave] for chave in parameters})
-            result = cursor.execute(consulta, tupla)
+            result = cursor.execute(consulta_hotel_sem_cidade, tupla)
 
         hoteis = []
         for linha in result:
@@ -76,7 +40,8 @@ class Hoteis(Resource):
                 , 'nome': linha[1]
                 , 'nota': linha[2]
                 , 'diaria': linha[3]
-                , 'cidade': linha[4]                
+                , 'cidade': linha[4]  
+                , 'site_id': linha[5]                
             })
 
         return { 'hoteis': hoteis }
@@ -88,6 +53,7 @@ class Hotel(Resource):
     argumento.add_argument('nota', type=float, required=True, help='The field nota must be filled')
     argumento.add_argument('diaria')
     argumento.add_argument('cidade')
+    argumento.add_argument('site_id', type=int, required=True, help='Missing site id. Every hotel has to be linked to a site')
 
     def get(self, id):
         hotel = HotelModel.find_by_id(id)

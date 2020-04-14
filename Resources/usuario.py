@@ -1,8 +1,10 @@
 from flask_restful import Resource, reqparse
 from models.usuario import UsuarioModel
-from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
+from flask_jwt_extended import (create_access_token
+                                , jwt_required
+                                , get_raw_jwt)
 from werkzeug.security import safe_str_cmp
-from BLACKLIST import BLACKLIST
+from blacklist import BLACKLIST
 
 class Usuario(Resource):
 
